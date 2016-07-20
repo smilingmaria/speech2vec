@@ -21,7 +21,7 @@ while read line; do
 	outfile=$3/${flac_id}_${word_id}_${word_in_utter_counter}.flac
 	
 	# Split using ffmpeg	
-	#ffmpeg -loglevel error -i $infile -ss $time_start -t $duration $outfile < /dev/null
+	ffmpeg -loglevel error -i $infile -ss $time_start -t $duration $outfile < /dev/null
 	
 	# For word counter
 	if [[ -z "$prev_flac_id" ]]; then
