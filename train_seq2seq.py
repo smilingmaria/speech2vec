@@ -1,87 +1,73 @@
 import pdb
 import pickle
 
-from keras.models import Model
-from keras.layers import Input, Dense, Lambda, Masking, RepeatVector, Dropout
-from keras.layers import recurrent,LSTM
-from keras.layers.wrappers import TimeDistributed
+from seq2seq.models import Seq2seq
+from keras import backend as K
 
 import h5py
 from util import load_dataset, save_to_csv
 from util import loss_fnt_masks
 from util import makedir
 
-exp = 'simpleseq2seq'
-result_dir = './result/' + exp + '/'
+exp = 'seq2seq'
 
+dataset = './data/dev-clean/'
+fbank_type = 'fbank_delta/'
+
+result_dir = './result/' + exp + '/' + fbank_type + '/'
 makedir(result_dir)
 
-dataset = 'dev'
-fbank_type = 'fbank/'
-
 print "Loading dataset..."
-X = load_dataset(dataset,fbank_type)
+X = load_dataset(dataset+fbank_type)
 mask = loss_fnt_masks(X)
 
 sample, timestep, feature = X.shape
 
 batch_size = 32
-nb_epoch = 1
+nb_epoch = 20
 dropout = 0.25
 
-hidden = 10
+hidden = 20
+encoder_depth = 2
+decoder_depth = 2
+
+model_name = "batch_{0}_epoch_{1}_hidden_{2}_depth_{3},{4}".format(batch_size,nb_epoch,hidden,encoder_depth,decoder_depth) 
 
 print "Compiling model..."
 # Define Model
-x = Input(shape=(timestep,feature))
 
-masked_x = Masking(mask_value=0.)(x)
-#x = Masking(mask_value=0.,input_shape=(timestep,feature))
+model = Seq2seq(batch_input_shape=(batch_size, timestep, feature), \
+                hidden_dim=hidden, \
+                output_length=timestep, \
+                output_dim=feature, \
+                depth=(encoder_depth,decoder_depth))
+model.compile(loss='mse',optimizer='rmsprop', sample_weight_mode='temporal')
 
-#enc1 = LSTM(hidden)(x)
-enc1 = LSTM(hidden)(masked_x)
-
-code = enc1
-
-dropped_code = Dropout(dropout)(code)
-
-repeated_dropped_code = RepeatVector(timestep)(dropped_code)
-
-dec1 = LSTM(hidden, return_sequences=True)(repeated_dropped_code)
-
-rec_x = TimeDistributed(Dense(75))(dec1)
-
-model = Model(input = [x], output=[rec_x])
-encoder = Model(input=[x],output=[code])
-
-model.compile(loss='mse', optimizer='rmsprop',sample_weight_mode='temporal')
-history = model.fit( X, X, 
-            batch_size,
-            nb_epoch,
-            sample_weight = mask
-            )
+history = model.fit( X, X, batch_size, nb_epoch, sample_weight = mask)
 
 print "Saving model..."
 # Model architecture
 json_string = model.to_json()
-open(result_dir + exp + '.json', 'w').write(json_string)
+open(result_dir + model_name + '.json', 'w').write(json_string)
 
 # Model weights
-model.save_weights(result_dir + exp + '_weights.h5')
-
+model.save_weights(result_dir + model_name + '_weights.h5')
 # Model training history
-pickle.dump(history,open(result_dir + exp + '.history','w'))
+open(result_dir+model_name+'.history','w').write(str(history.__dict__))
 
 print "Saving reconstruction..."
 # Model prediction
+encoder = K.function([model.layers[0].input,K.learning_phase()], model.layers[ 2 * encoder_depth - 1].output)
+
 rec_X = model.predict(X)
-code = encoder.predict(X)
+code = encoder([X,False])
 # CSV
-csv_dir = result_dir + 'csv/'
-makedir(csv_dir)
-save_to_csv(Y,csv_dir)
+#csv_dir = result_dir + 'csv/' + model_name + '/'
+#makedir(csv_dir)
+#save_to_csv(rec_X,csv_dir)
+
 # Fbank numpy array
-h5f = h5py.File(result_dir + exp + '_result.h5','w')
+h5f = h5py.File(result_dir + model_name + '_result.h5','w')
 h5f.create_dataset('rec_X',data=rec_X)
 h5f.create_dataset('code', data=code)
 h5f.close()

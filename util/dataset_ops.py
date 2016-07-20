@@ -16,14 +16,9 @@ DATA_NAME = 'data.h5'
 
 CSV_EXT = ".csv"
 
-def load_dataset(path, dir_root = './data/'):
+def load_dataset(path):
     # dataset: train | dev | test
-    if dataset == "dev":
-        h5path = path + DATA_NAME
-    elif dataset == "test":
-        h5path = path + DATA_NAME
-    else:
-        raise Exception("No such dataset: {}".format(dataset))
+    h5path = path + DATA_NAME
     f = h5py.File(h5path,'r')
     return f['fbank'][:]
 

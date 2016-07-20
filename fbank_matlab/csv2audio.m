@@ -1,7 +1,4 @@
-clear;
 function csv2audio(path_to_result, path_to_data);
-path_to_result   = '/home/antonie/Project/speech2vec/src/tmp_csv';
-path_to_data     = '/home/antonie/Project/speech2vec/data/dev-clean';
 
 path_to_yphase   = strcat(path_to_data,'/yphase');
 

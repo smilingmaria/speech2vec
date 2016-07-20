@@ -1,5 +1,5 @@
 clear;
-path_to_result   = '/home/antonie/Project/speech2vec/src/tmp_csv';
+path_to_result   = '/home/antonie/Project/speech2vec/result/simpleseq2seq/csv';
 path_to_data     = '/home/antonie/Project/speech2vec/data/dev-clean';
 
 path_to_yphase   = strcat(path_to_data,'/yphase');
@@ -23,12 +23,12 @@ yphase_list = dir(path_to_yphase);
 results = dir(path_to_result);
 
 for i = 1:size(results);
-    
+    fprintf('Writing flacs %d/%d...\n',i,size(results));
     [ pathstr, name, ext ] = fileparts(results(i).name);
     if ~strcmp(ext,'.csv');
         continue;
     end;
-    disp(name);
+
     
     csvfile = strcat(path_to_result,'/',name,ext);
     phasefile = strcat(path_to_yphase,'/',name,'.phase');
@@ -36,14 +36,18 @@ for i = 1:size(results);
     % Read feature and phase for reconstruction
     feature = csvread(csvfile);
     yphase = csvread(phasefile);
+    
+    [ row, col ] = size(yphase);
+    
     % Invert for audiowrite
     feature = feature.';
-    
+    feature = feature(:,1:col);
     if has_delta;
         diag_var = var(feature,1,2); % var(A, w, dims)
         var_Y = diag(diag_var);
         feature = generalized_MLPG_ver2(feature, var_Y, 2, dyn_dims);
     end;
+    
     % Inverse from Log MFCC Spectrum
     siga_delta = Inverse_From_LogMel(feature, yphase, FrameSize, FrameRate, sr, FFT_SIZE, 'htkmel', minfreq, maxfreq, 1, 1);
     new_name = strcat(path_to_result,'/reconstructed_',name,'.flac');
