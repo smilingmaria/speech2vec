@@ -1,5 +1,7 @@
-function extract_fbank_from_flac(path_to_dir)
-%path_to_dir = '/home/antonie/Project/speech2vec/data/dev-clean/';
+clear;
+%% Select the directory of flac files, the converted features will be saved
+
+path_to_dir = '/home/antonie/Project/speech2vec/data/dev-clean/';
 path_to_flacs = strcat(path_to_dir,'flacs/');
 path_to_phase = strcat(path_to_dir,'yphase/');
 path_to_fbank = strcat(path_to_dir,'fbank/');

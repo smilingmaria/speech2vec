@@ -1,3 +1,4 @@
+import argparse
 from glob import glob
 import os
 import pdb
@@ -15,27 +16,27 @@ DATA_NAME = 'data.h5'
 
 CSV_EXT = ".csv"
 
-def load_dataset(dataset, fbank_type, dir_root = './data/'):
+def load_dataset(path, dir_root = './data/'):
     # dataset: train | dev | test
     if dataset == "dev":
-        h5path = dir_root + DEV_CLEAN + fbank_type + DATA_NAME
+        h5path = path + DATA_NAME
     elif dataset == "test":
-        h5path = dir_root + TEST_CLEAN + fbank_type + DATA_NAME
+        h5path = path + DATA_NAME
     else:
         raise Exception("No such dataset: {}".format(dataset))
     f = h5py.File(h5path,'r')
     return f['fbank'][:]
 
-def create_dataset(path, fbank_type, ext = CSV_EXT):
+def create_dataset(path, ext = CSV_EXT):
     """
         Stores as array of objects( different size arrays )
     """
-    print "Creating dataset at {0}...".format(path+fbank_type)
+    print "Creating dataset at {0}...".format(path)
     print "Loading samples..." 
     fbank = []
-    num_of_samples = len(glob(path+fbank_type+"*.csv"))
+    num_of_samples = len(glob(path+"*.csv"))
     for i in tqdm(range(1,num_of_samples+1,1)):
-        filename = path + fbank_type + str(i) + ext
+        filename = path + str(i) + ext
 
         arr = np.loadtxt(filename,delimiter=',',dtype='float32')
         fbank.append(arr)
@@ -59,8 +60,8 @@ def create_dataset(path, fbank_type, ext = CSV_EXT):
     
     # Stack and save
     h5name = 'data.h5'
-    print "Saving to {0}...".format(path+fbank_type+h5name)
-    f = h5py.File(path+fbank_type+h5name,'w')
+    print "Saving to {0}...".format(path+h5name)
+    f = h5py.File(path+h5name,'w')
     f.create_dataset('fbank',data=fbank)
     f.close()
     print 'Done'
@@ -83,12 +84,18 @@ def save_to_csv(fbank,dir_name):
         np.savetxt(fname,arr,delimiter=",") 
 
 if __name__ == "__main__":
-    fbank = load_dataset("dev","fbank/")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a',dest='action',help='create')
+    parser.add_argument('-p',dest='path',help='path to dataset(dev|test)')
+    args =  parser.parse_args()
+    action = args.action
+    path = args.path
+    if action and path:
+        if action == "create":
+            create_dataset(path)
+        else:
+            raise Exception("No such action {0}".format(action))
     
-    save_to_csv(fbank,"tmp_csv/")
-
-
-
     
 
 
