@@ -30,7 +30,6 @@ def seq2seq_autoencoder(rnn_type, shape, output_length, output_dim, hidden_dim, 
 	# Define encoder
 	x = encoder_out = Input(shape=(timestep,feature))		
 	encoder_out = Masking(mask_value=0.)(encoder_out) # Add masking
-	encoder_out = TimeDistributed(Dense(hidden_dim))(encoder_out)	
 	for i in range(1,enc_depth):
 		encoder_out = rnn( hidden_dim, return_sequences=True )(encoder_out)		
 		encoder_out = Dropout(dropout)(encoder_out)
@@ -40,12 +39,11 @@ def seq2seq_autoencoder(rnn_type, shape, output_length, output_dim, hidden_dim, 
 	
 	# Define decoder
 	c = decoder_out = Input(shape=(encode_dim,))	
-	decoder_out = onetomany_rnn(output_length=timestep, output_dim=hidden_dim)(decoder_out)
+	decoder_out = onetomany_rnn(output_length=timestep, output_dim=( output_dim if dec_depth == 1 else hidden_dim) )(decoder_out)
 		
 	for i in range(1,dec_depth):
-		decoder_out = rnn( output_dim = hidden_dim, return_sequences =True)(decoder_out)
+		decoder_out = rnn( output_dim = ( output_dim if i + 1 == dec_depth else hidden_dim), return_sequences =True)(decoder_out)
 		decoder_out = Dropout(dropout)(decoder_output)		
-	decoder_out = TimeDistributed(Dense(output_dim))(decoder_out)
 	
 	decoder = Model(input=c, output=decoder_out)	
 	
@@ -53,7 +51,7 @@ def seq2seq_autoencoder(rnn_type, shape, output_length, output_dim, hidden_dim, 
 	model = Sequential()
 	model.add(encoder)
 	model.add(decoder)	
-	model.compile(loss=loss,optimizer=optimizer)	
+	model.compile(loss=loss,optimizer=optimizer,sample_weight_mode='temporal')	
 
 	return model, encoder, decoder
 	
@@ -69,7 +67,6 @@ def variational_autoencoder(rnn_type, shape, output_length, output_dim, hidden_d
 	# Define encoder
 	x = encoder_out = Input(shape=(timestep,feature))		
 	encoder_out = Masking(mask_value=0.)(encoder_out) # Add masking
-	encoder_out = TimeDistributed(Dense(hidden_dim))(encoder_out)	
 	for i in range(1, enc_depth):
 		encoder_out = rnn( hidden_dim, return_sequences=True )(encoder_out)		
 		encoder_out = Dropout(dropout)(encoder_out)
@@ -91,13 +88,11 @@ def variational_autoencoder(rnn_type, shape, output_length, output_dim, hidden_d
 	
 	# Define decoder
 	c = decoder_out = Input(shape=(encode_dim,))	
-	decoder_out = onetomany_rnn(output_length=timestep, output_dim=hidden_dim)(decoder_out)
-		
+	decoder_out = onetomany_rnn(output_length=timestep, output_dim=( output_dim if dec_depth == 1 else hidden_dim) )(decoder_out)
+	
 	for i in range(1,dec_depth):
-		decoder_out = rnn( output_dim = hidden_dim, return_sequences =True)(decoder_out)
+		decoder_out = rnn( output_dim = ( output_dim if i + 1 == dec_depth else hidden_dim), return_sequences =True)(decoder_out)
 		decoder_out = Dropout(dropout)(decoder_output)		
-
-	decoder_out = TimeDistributed(Dense(output_dim))(decoder_out)
 	
 	decoder = Model(input=c, output=decoder_out)	
 
@@ -110,10 +105,10 @@ def variational_autoencoder(rnn_type, shape, output_length, output_dim, hidden_d
 	model = Sequential()
 	model.add(encoder)
 	model.add(decoder)	
-	model.compile(loss=vae_loss,optimizer=optimizer)	
+	model.compile(loss=vae_loss,optimizer=optimizer, sample_weight_mode='temporal')	
 	
 	return model, encoder, decoder
 	
 if __name__ == "__main__":
-	#s2s = seq2seq_autoencoder('GRU',(2,3),4,5,6,7)
+	s2s = seq2seq_autoencoder('GRU',(2,3),4,5,6,7)
 	vae = variational_autoencoder('SimpleRNN',(2,3,4),5,6,7,8)
