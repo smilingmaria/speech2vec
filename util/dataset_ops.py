@@ -73,7 +73,7 @@ def save_to_csv(fbank,dir_name):
             raise
 
     for idx,arr in tqdm(enumerate(fbank)):
-        fname = dir_name + str(idx) + ".csv" 
+        fname = dir_name + str(idx+1) + ".csv" 
         mask = np.all(np.isnan(arr) | np.equal(arr, 0), axis=1)
         arr = arr[~mask]
         np.savetxt(fname,arr,delimiter=",") 
