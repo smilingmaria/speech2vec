@@ -7,14 +7,7 @@ hidden_dim = 128
 depth = (2,2)
 
 model = Seq2seq(batch_input_shape, cells, hidden_dim, depth, peek = True)
+model.build_graph()
 
-model.build_inputs()
-model.build_encoder()
-model.build_decoder()
-
-cells = ['GRUCell'] * 3
-model = AttentionSeq2seq(batch_input_shape, cells, hidden_dim, depth)
-
-model.build_inputs()
-model.build_encoder()
-model.build_decoder()
+#model = AttentionSeq2seq(batch_input_shape, cells, hidden_dim, depth)
+#model.build_graph()

@@ -30,8 +30,8 @@ def basic_decoder( batch_input_shape, cells, code,  keep_prob, **kwargs ):
             return prev + code_dropout # Output as input
         else:
             return prev
-
-    decoder_outputs, decoder_state = seq2seq.rnn_decoder( decoder_inputs, tf.zeros([batch_size,hidden_dim],tf.float32), de_cell, loop_function = loop )
+   
+    decoder_outputs, decoder_state = seq2seq.rnn_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), de_cell, loop_function = loop )
    
     W_out = tf.Variable( xavier_init(hidden_dim, feature) )
     b_out = tf.Variable( tf.zeros([ feature ] ) )
@@ -48,6 +48,7 @@ def attention_decoder( batch_input_shape, cells, code, annotation, keep_prob, **
 
     assert len(cells) == 1, "One cell needed!"
     de_cell = cells[0]
+    
     hidden_dim = de_cell.output_size
 
     # Start building graph
@@ -60,11 +61,9 @@ def attention_decoder( batch_input_shape, cells, code, annotation, keep_prob, **
     def loop(prev, i):
             return prev # Output as input
     
-    import pdb; pdb.set_trace()
     packed_annotation = tf.transpose(tf.pack(annotation), perm=[1,0,2])
-    
-    
-    decoder_outputs, decoder_state = seq2seq.attention_decoder( decoder_inputs, tf.zeros( [ batch_size, hidden_dim], tf.float32 ), packed_annotation ,de_cell, loop_function = loop )
+   
+    decoder_outputs, decoder_state = seq2seq.attention_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), packed_annotation ,de_cell, loop_function = loop )
    
     W_out = tf.Variable( xavier_init(hidden_dim, feature) )
     b_out = tf.Variable( tf.zeros([ feature ] ) )
