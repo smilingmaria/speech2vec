@@ -3,34 +3,34 @@ import numpy as np
 import tensorflow as tf
 
 import config
-from speech2vec.datasets import dsp_hw2
-from speech2vec.models import AttentionSeq2seq
+from speech2vec.datasets import wav
+from speech2vec.models import Seq2seq
 
 # Load data
-dataset = dsp_hw2()
+dataset = wav()
 
-X = dataset.fbank_delta
+X = dataset.X
 y = dataset.labels
 
 # Learning Parameters
 sample, timestep, feature = X.shape
 
-cells = ['LSTMCell'] * 2
+cells = ['GRUCell'] * 2
 
 batch_size = 32
-hidden_dim = 256
-depth = (2,2)
+hidden_dim = 128
+depth = (1,1)
 keep_prob = 0.8
 peek = False
 
 batch_input_shape = ( batch_size, timestep, feature )
 
 # Build model
-model = AttentionSeq2seq( batch_input_shape,\
+print "Building model..."
+model = Seq2seq( batch_input_shape,\
                             cells,\
                             hidden_dim,\
-                            depth,\
-                            bidirectional=True)
+                            depth)
 model.build_graph()
 
 # Training
@@ -38,13 +38,13 @@ nb_epochs = 1000
 
 # GPU memory alllocation
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.4
+config.gpu_options.per_process_gpu_memory_fraction = 0.6
 
 saver = tf.train.Saver()
 
 min_loss = 1.
 epoch_losses = []
-
+print "Start training"
 with tf.Session(config=config) as sess:
     
     tf.initialize_all_variables().run()
@@ -63,6 +63,6 @@ with tf.Session(config=config) as sess:
         epoch_losses.append(epoch_loss)
         if epoch_loss < min_loss: 
             min_loss = epoch_loss
-            save_path = saver.save(sess, "../result/attention_lstm.ckpt")
+            save_path = saver.save(sess, "../result/wav/seq2seq_gru.ckpt")
             print("Model saved in file: %s" % save_path)
         print "Epoch {}, loss {}, min_loss {}".format( epoch, epoch_loss, min_loss) 

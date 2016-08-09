@@ -3,19 +3,21 @@ import numpy as np
 import tensorflow as tf
 
 import config
-from speech2vec.datasets import dsp_hw2
-from speech2vec.models import AttentionSeq2seq
+from speech2vec.datasets import wav
+from speech2vec.models import Seq2seq
 
 # Load data
-dataset = dsp_hw2()
+dataset = wav()
 
-X = dataset.fbank_delta
+X = dataset.X
 y = dataset.labels
+
+X = X[:,None]
 
 # Learning Parameters
 sample, timestep, feature = X.shape
 
-cells = ['LSTMCell'] * 2
+cells = ['GRUCell'] * 2
 
 batch_size = 32
 hidden_dim = 256
@@ -26,7 +28,7 @@ peek = False
 batch_input_shape = ( batch_size, timestep, feature )
 
 # Build model
-model = AttentionSeq2seq( batch_input_shape,\
+model = Seq2seq( batch_input_shape,\
                             cells,\
                             hidden_dim,\
                             depth,\

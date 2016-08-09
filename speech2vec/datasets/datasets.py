@@ -10,20 +10,25 @@ import numpy as np
 from np_utils import to_categorical
 
 class Dataset(object):
-    def __init__(self, h5_path, fbank_type = 'fbank_delta'):
+    def __init__(self, h5_path, data_type = 'fbank_delta'):
         """
             Fbank delta only at the moment
         """
         h5f = h5py.File(h5_path,'r')
-        self.fbank_delta = h5f[ fbank_type ][:]
+
+        self.fbank_delta = h5f[ data_type ][:]
         self.labels = h5f['labels'][:]
 
+        if data_type == "wav":
+            self.fbank_delta = np.expand_dims(self.fbank_delta,axis=2)
+        
         self.setup()
 
-        self.transform()
+        #self.transform()
 
     def setup(self):
         self.X = self.fbank_delta
+        
         self.y = to_categorical(self.labels)
 
     def transform(self):
@@ -66,7 +71,9 @@ class Dataset(object):
 #####################
 #  Datasets to call #
 #####################
-
+def wav():
+    h5_path = '../raw_data/dsp_hw2/wav.h5'
+    return Dataset(h5_path,'wav')
 def dsp_hw2():
     h5_path = '../raw_data/dsp_hw2/dsp_hw2.h5' 
     return Dataset(h5_path)
