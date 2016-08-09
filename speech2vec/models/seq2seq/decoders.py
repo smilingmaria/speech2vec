@@ -2,8 +2,6 @@ import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
 from tensorflow.python.ops import seq2seq
 
-from init import xavier_init
-
 # Assume input "x" is a 3D matrix of ( sample, timestep, feature )
 # Named arguments are mostly tensors
 # Keyword arguments contain 'real numbers, such as timestep, hidden_dim'
@@ -33,7 +31,8 @@ def basic_decoder( batch_input_shape, cells, code,  keep_prob, **kwargs ):
    
     decoder_outputs, decoder_state = seq2seq.rnn_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), de_cell, loop_function = loop )
    
-    W_out = tf.Variable( xavier_init(hidden_dim, feature) )
+    W_out = tf.get_variable("W_out", shape=[hidden_dim, feature],
+                       initializer=tf.contrib.layers.xavier_initializer())
     b_out = tf.Variable( tf.zeros([ feature ] ) )
 
     unpacked_reconstruction = [ tf.matmul( tf.nn.dropout( out, keep_prob ), W_out ) for out in decoder_outputs ]
@@ -65,7 +64,9 @@ def attention_decoder( batch_input_shape, cells, code, annotation, keep_prob, **
    
     decoder_outputs, decoder_state = seq2seq.attention_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), packed_annotation ,de_cell, loop_function = loop )
    
-    W_out = tf.Variable( xavier_init(hidden_dim, feature) )
+    W_out = tf.get_variable("W_out", shape=[hidden_dim, feature],
+                       initializer=tf.contrib.layers.xavier_initializer())
+    
     b_out = tf.Variable( tf.zeros([ feature ] ) )
 
     unpacked_reconstruction = [ tf.matmul( tf.nn.dropout( out, keep_prob ), W_out ) for out in decoder_outputs ]
