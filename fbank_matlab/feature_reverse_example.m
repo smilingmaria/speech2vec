@@ -1,13 +1,13 @@
 clear all; close all; clc;
 
-wavname = 'blwr00000.wav';
-newname = 'blwr00000_restruct.wav';
+wavname = 'N110003.wav';
+newname = 'N110003_restruct.wav';
 
 AmFlag = 2;
 FrameSize = 400; % Window Len
 FrameRate = 120; % FrameShift
 FFT_SIZE = 256;
-sr = 16000;
+sr = 8000;
 minfreq = 120;
 maxfreq = sr / 2;
 nfilts = 75; %filter num
@@ -31,4 +31,6 @@ var_Y = diag(diag_var);
 after = generalized_MLPG_ver2(total_feature, var_Y, 2, dyn_dims);
 siga_delta = Inverse_From_LogMel(after, yphase, FrameSize, FrameRate, sr, FFT_SIZE, 'htkmel', minfreq, maxfreq, 1, 1);
 
-audiowrite(newname, siga_delta, sr);
+sound(siga_delta,sr)
+
+%audiowrite(newname, siga_delta, sr);
