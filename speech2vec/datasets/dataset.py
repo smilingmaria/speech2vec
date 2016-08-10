@@ -13,27 +13,33 @@ class Dataset(object):
     """
     def __init__(self, h5_path, data_type):
         with h5py.File(h5_path,'r') as h5f:
-            X = h5f[ data_type ][:]
+            feature = h5f[ data_type ][:]
+            yphase = h5f['yphase'][:]
             labels = h5f['labels'][:]
-       
-        self._X = X
+        
+        self._feature = feature
+        # Has no use for wav
+        self._yphase = yphase
         self._y = to_categorical(labels)
-       
-        self._normX = self.fit_transform(self._X) 
-    
+        
+        # Normalization
+        self._normfeature = self.fit_transform(self._feature) 
+        self._normyphase  = self.fit_transform(self._yphase)
+
     @property
     def X(self):
-        return self._X
+        return np.dstack([ self._feature, self._yphase ])
+
+    @property
+    def normX(self):
+        return np.dstack([ self._normfeature, self._normyphase ])
 
     @property
     def y(self):
         return self._y
 
-    @property
-    def normX(self):
-        return self._normX
-    
-    def next_batch(self, norm = False, batch_size = 32, shuffle = True):
+    def next_batch(self, batch_size = 32, norm = False, shuffle = False):
+        # Concatenate X and yphase for unified input
         if norm:
             X = self.normX
         else:
@@ -41,20 +47,36 @@ class Dataset(object):
 
         Y = self.y
 
-        toadd = ( batch_size - X.shape[0] % batch_size ) % batch_size
-
-        X = np.vstack([ X, X[:toadd] ] )
-        Y = np.vstack([ y, y[:toadd] ] ) 
+        # Add samples according to batch_size
+        toadd  = ( batch_size - X.shape[0] % batch_size ) % batch_size
+        X      = np.vstack([ X, X[:toadd] ] )
+        Y      = np.vstack([ Y, Y[:toadd] ] ) 
         
         assert X.shape[0] % batch_size == 0
         
         if shuffle:
             X, Y = sklearn.utils.shuffle(X, Y, random_state=0)
-        
+
         for idx in range(0, X.shape[0], batch_size):
             x = X[idx:idx+batch_size]
             y = Y[idx:idx+batch_size]
+
             yield x, y
+    
+    def fit_X_shape(self, X_pred):
+        sample = self.X.shape[0]
+        return X_pred[:sample]
+    
+    def split_X(self, X_rec):
+        feature_length = self._feature.shape[-1]
+        yphase_length  = self._yphase.shape[-1]
+
+        assert feature_length + yphase_length == X_rec.shape[-1]
+
+        feature = X_rec[:,:,:feature_length]
+        yphase  = X_rec[:,:,feature_length:]
+
+        return feature, yphase
 
 class Acoustic(Dataset, InstanceWise):
     def __init__(self, h5_path, data_type):
@@ -86,12 +108,14 @@ def to_categorical(y, nb_classes=None):
 #                         #
 ###########################
 
-project_root = os.path.abspath('../../')
-raw_data_dir = project_root + '/raw_data/'
+cur_dir = os.path.abspath(os.path.dirname(__file__))
+
+project_root = cur_dir + '/../../'
+raw_data_dir = project_root + 'raw_data/'
 
 def dsp_hw2(data_type='fbank_delta'):
     
-    h5_path = raw_data_dir + 'dsp_hw2/dsp_hw2.h5' 
+    h5_path = raw_data_dir + 'dsp_hw2/data.h5' 
 
     if data_type == 'fbank' or data_type == 'fbank_delta':
         dataset_class = Spectral

@@ -2,8 +2,6 @@ import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
 from tensorflow.python.ops import seq2seq
 
-from init import xavier_init
-
 # Assume input "x" is a 3D matrix of ( sample, timestep, feature )
 
 def basic_encoder( cells, x, keep_prob ):
