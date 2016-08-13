@@ -175,7 +175,7 @@ class VariationalSeq2seqAutoencoder(Seq2seqAutoencoder):
         super(VariationalSeq2seqAutoencoder, self).__init__(batch_input_shape, cells, hidden_dim, depth, dropout_keep_prob, **kwargs)
         self.hidden_dim = hidden_dim 
         self.latent_dim = latent_dim
-        self._name += '_' + str(latent_dim) 
+        self._name += '_latent_' + str(latent_dim) 
     
     def build_graph(self):
         self.build_inputs()

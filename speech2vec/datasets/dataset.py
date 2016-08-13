@@ -12,6 +12,8 @@ class Dataset(object):
         - next_batch: iterates through next batch of self._X, self._y
     """
     def __init__(self, h5_path, data_type):
+
+        self._data_type = data_type
         with h5py.File(h5_path,'r') as h5f:
             feature = h5f[ data_type ][:]
             yphase = h5f['yphase'][:]
@@ -25,6 +27,10 @@ class Dataset(object):
         # Normalization
         self._normfeature = self.fit_transform(self._feature) 
         self._normyphase  = self.fit_transform(self._yphase)
+
+    @property
+    def data_type(self):
+        return self._data_type
 
     @property
     def X(self):
@@ -68,6 +74,8 @@ class Dataset(object):
         return X_pred[:sample]
     
     def split_X(self, X_rec):
+        X_rec = self.fit_X_shape(X_rec)
+
         feature_length = self._feature.shape[-1]
         yphase_length  = self._yphase.shape[-1]
 

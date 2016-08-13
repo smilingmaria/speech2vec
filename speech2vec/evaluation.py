@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
@@ -16,6 +18,23 @@ def load_h5(h5_path):
         X_rec = h5f['X_rec'][:]
         code  = h5f['code'][:]
     return X_rec, code
+
+def save_to_csv( arr,dir_name):
+    assert dir_name.endswith("/")
+
+    try: 
+        os.makedirs(dir_name)
+    except OSError:
+        if not os.path.isdir(dir_name):
+            raise
+
+    for idx,arr in tqdm(enumerate(arr)):
+        fname = dir_name + str(idx+1) + ".csv" 
+        arr = np.nan_to_num(arr)
+        # Remove rows that are all nans or all zeros
+        #mask = np.all(np.isnan(arr) | np.equal(arr, 0), axis=1)
+        #arr = arr[~mask]
+        np.savetxt(fname,arr,delimiter=",") 
 
 def plot_tsne(X,Y):
     tsne = TSNE(n_components=2, random_state=0)

@@ -37,7 +37,8 @@ def basic_decoder( batch_input_shape, cells, code,  keep_prob, **kwargs ):
 
     unpacked_reconstruction = [ tf.matmul( tf.nn.dropout( out, keep_prob ), W_out ) for out in decoder_outputs ]
 
-    recX = tf.nn.relu( tf.transpose(tf.pack(unpacked_reconstruction), perm=[1, 0, 2]) )
+    #recX = tf.nn.relu( tf.transpose(tf.pack(unpacked_reconstruction), perm=[1, 0, 2]) )
+    recX = tf.transpose(tf.pack(unpacked_reconstruction), perm=[1, 0, 2])
 
     return recX
 

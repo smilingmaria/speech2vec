@@ -1,11 +1,10 @@
 clear;
-path_to_result   = '/home/antonie/Project/speech2vec/raw_data/dsp_hw2/fbank';
-%path_to_result   = '/home/antonie/Project/speech2vec/result/dsp_hw2_one_digit_seq2seq/fbank_delta/csv/batch_64_epoch_10000_hidden_50_depth_2,2_dropout_0.2_optimizer_nadam_epoch_8500'
-has_delta = false;
 
-path_to_data     = '/home/antonie/Project/speech2vec/raw_data/dsp_hw2';
+has_delta = true;
 
-path_to_yphase   = strcat(path_to_data,'/yphase');
+path_to_data = '/home/antonie/Project/speech2vec/raw_data/dsp_hw2'
+path_to_result = strcat(path_to_data,'/fbank_delta');
+path_to_yphase = strcat(path_to_data,'/yphase');
 
 
 AmFlag = 2;
@@ -21,7 +20,7 @@ am_scale = 1000;
 dyn_dims = nfilts * 3;
 
 
-yphase_list = dir(strcat(path_to_yphase,'/*.csv'));
+%yphase_list = dir(strcat(path_to_yphase,'/*.csv'));
 results = dir(strcat(path_to_result,'/*.csv'));
 
 for i = 1:size(results);
@@ -35,12 +34,14 @@ for i = 1:size(results);
     feature = csvread(csvfile);
     yphase = csvread(phasefile);
     
-    [ row, col ] = size(yphase);
+    [ row, col ] = size(feature);
+    
+    %yphase = zeros(row,256);
     
     % Invert for audiowrite
     yphase = yphase.';
     feature = feature.';
-    feature = feature(:,1:row);
+    %feature = feature(:,1:row);
     if has_delta;
         diag_var = var(feature,1,2); % var(A, w, dims)
         var_Y = diag(diag_var);
