@@ -58,10 +58,11 @@ def read_csv_to_arr(path):
     # Pad Zeros & Stack
     for i in range(len(fbank)):
         ts, _ = fbank[i].shape
-        
+        import pdb; pdb.set_trace()
         pad_front = (max_timestep - ts) / 2
         pad_back  = (max_timestep - ts+1) / 2
         fbank[i] = np.pad(fbank[i],((pad_front,pad_back),(0,0)),'constant',constant_values=0.)
+        
         assert fbank[i].shape[0] == max_timestep, "Padding failed"
 
     fbank = np.dstack(fbank)
