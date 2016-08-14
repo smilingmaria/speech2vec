@@ -17,19 +17,24 @@ def basic_decoder( batch_input_shape, cells, code,  keep_prob, **kwargs ):
     # Start building graph
     hidden_dim = de_cell.output_size 
 
+    # Define code
     code_dropout = tf.nn.dropout(code, keep_prob)
    
     code_dim = int(code_dropout.get_shape()[1])
 
-    decoder_inputs = [ code_dropout ] + [ tf.placeholder(tf.float32, shape=[ batch_size, code_dim ] ) for i in range(timestep-1) ]
-    
+    # Decoder inputs
+    rest_of_decoder_inputs = [ tf.placeholder(tf.float32, shape=[ batch_size, code_dim ]) for _ in range(timestep-1) ]
+
+    decoder_inputs_dropout = [ code_dropout ] + \
+            [ tf.nn.dropout(inp, keep_prob) for inp in rest_of_decoder_inputs ] 
+
     def loop(prev, i):
         if peek:
             return prev + code_dropout # Output as input
         else:
             return prev
    
-    decoder_outputs, decoder_state = seq2seq.rnn_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), de_cell, loop_function = loop )
+    decoder_outputs, decoder_state = seq2seq.rnn_decoder( decoder_inputs_dropout, de_cell.zero_state(batch_size,tf.float32), de_cell, loop_function = loop )
    
     W_out = tf.get_variable("W_out", shape=[hidden_dim, feature],
                        initializer=tf.contrib.layers.xavier_initializer())
@@ -55,15 +60,18 @@ def attention_decoder( batch_input_shape, cells, code, annotation, keep_prob, **
     code_dropout = tf.nn.dropout(code, keep_prob)
     
     code_dim = int( code_dropout.get_shape()[1] ) 
-    decoder_inputs = [ code_dropout ] + \
-            [ tf.placeholder(tf.float32, shape=[ batch_size, code_dim ]  ) for i in range( timestep -1 ) ]
+    
+    rest_of_decoder_inputs = [ tf.placeholder(tf.float32, shape=[ batch_size, code_dim ]) for _ in range(timestep-1) ]
+
+    decoder_inputs_dropout = [ code_dropout ] + \
+            [ tf.nn.dropout(inp, keep_prob) for inp in rest_of_decoder_inputs ] 
 
     def loop(prev, i):
             return prev # Output as input
     
     packed_annotation = tf.transpose(tf.pack(annotation), perm=[1,0,2])
    
-    decoder_outputs, decoder_state = seq2seq.attention_decoder( decoder_inputs, de_cell.zero_state(batch_size,tf.float32), packed_annotation ,de_cell, loop_function = loop )
+    decoder_outputs, decoder_state = seq2seq.attention_decoder( decoder_inputs_dropout, de_cell.zero_state(batch_size,tf.float32), packed_annotation ,de_cell, loop_function = loop )
    
     W_out = tf.get_variable("W_out", shape=[hidden_dim, feature],
                        initializer=tf.contrib.layers.xavier_initializer())

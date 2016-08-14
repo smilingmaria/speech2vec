@@ -44,7 +44,8 @@ model = Seq2seqAutoencoder( batch_input_shape,\
 
 model.build_graph()
 
-model_name = model.name
+#model_name = model.name
+model_name = 'pipeline'
 
 save_path = result_dir + model_name + '.ckpt'
 

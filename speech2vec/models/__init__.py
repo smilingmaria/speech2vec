@@ -1,1 +1,1 @@
-from .seq2seq import *
+from .seq2seqautoencoder import *
