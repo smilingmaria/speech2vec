@@ -9,7 +9,6 @@ from scipy.io import wavfile
 from tqdm import tqdm
 
 # Will need to find an alternative!
-from keras.preprocessing import sequence
 
 def create_data_h5(dataset_root):
     """
@@ -78,6 +77,7 @@ def read_wav_to_arr(path):
         arr = np.array(arr,dtype='float32')
         wav.append(arr)
 
+    from keras.preprocessing import sequence
     wav = sequence.pad_sequences( wav, padding='post', dtype='float32' )
     # Add one more dimension since wav is original 2D 
     wav = wav[...,None]
@@ -111,6 +111,9 @@ if __name__ == "__main__":
         raise ValueError("Specify data set path!")
     dataset_dir = project_root + '/' + sys.argv[1]
     dataset_dir = sys.argv[1]
-    create_data_h5(dataset_dir)
+    if not os.path.exists( dataset_dir + 'data.h5'):
+        create_data_h5(dataset_dir)
+    else:
+        print("Data set already exists for {}".format(dataset_dir))
 
 
