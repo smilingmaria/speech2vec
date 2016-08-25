@@ -17,7 +17,7 @@ def create_data_h5(dataset_root):
         Stores as array of objects( different size arrays )
     """
     print "Creating dataset at {0}...".format(dataset_root)
-    
+
     # Read fbank
     print "Reading fbank..."
     fbank = read_csv_to_arr( dataset_root + 'fbank/' )
@@ -25,7 +25,7 @@ def create_data_h5(dataset_root):
     # Read fbank_delta
     print "Reading fbank_delta..."
     fbank_delta = read_csv_to_arr( dataset_root + 'fbank_delta/' )
-    
+
     # read yphase
     print "Reading yphase"
     yphase = read_csv_to_arr( dataset_root + 'yphase/' )
@@ -36,10 +36,10 @@ def create_data_h5(dataset_root):
 
     # read labels
     print "Reading labels..."
-    labels = read_labels_to_arr( dataset_root + 'feature.map' )
-   
+    labels, genders = read_labels_to_arr( dataset_root + 'feature.map' )
+
     # save to data_h5
-    save_to_data_h5( dataset_root + 'data.h5', fbank, fbank_delta, yphase, wav, labels ) 
+    save_to_data_h5( dataset_root + 'data.h5', fbank, fbank_delta, yphase, wav, labels, genders )
 
 def read_csv_to_arr(path):
     fbank = []
@@ -58,16 +58,15 @@ def read_csv_to_arr(path):
     # Pad Zeros & Stack
     for i in range(len(fbank)):
         ts, _ = fbank[i].shape
-        import pdb; pdb.set_trace()
         pad_front = (max_timestep - ts) / 2
         pad_back  = (max_timestep - ts+1) / 2
         fbank[i] = np.pad(fbank[i],((pad_front,pad_back),(0,0)),'constant',constant_values=0.)
-        
+
         assert fbank[i].shape[0] == max_timestep, "Padding failed"
 
     fbank = np.dstack(fbank)
     fbank = np.rollaxis(fbank,2,0)
-   
+
     return fbank
 
 def read_wav_to_arr(path):
@@ -79,23 +78,26 @@ def read_wav_to_arr(path):
         wav.append(arr)
 
     wav = sequence.pad_sequences( wav, padding='post', dtype='float32' )
-    # Add one more dimension since wav is original 2D 
+    # Add one more dimension since wav is original 2D
     wav = wav[...,None]
     return wav
 
 def read_labels_to_arr(path_to_map):
     labels = []
+    genders = []
     with open( path_to_map,'r') as f:
         reader = csv.reader(f)
         for row in reader:
             labels.append(int(row[2]))
-    
+            genders.append(int(row[3]))
+
     labels = np.array(labels)
+    genders = np.array(genders)
 
-    return labels
+    return labels, genders
 
 
-def save_to_data_h5(path, fbank, fbank_delta, yphase, wav, labels):
+def save_to_data_h5(path, fbank, fbank_delta, yphase, wav, labels, genders):
     print "Saving to {0}...".format(path)
     f = h5py.File(path,'w')
     f.create_dataset('fbank',data=fbank)
@@ -103,6 +105,7 @@ def save_to_data_h5(path, fbank, fbank_delta, yphase, wav, labels):
     f.create_dataset('yphase',data=yphase)
     f.create_dataset('wav',data=wav)
     f.create_dataset('labels',data=labels)
+    f.create_dataset('genders',data=labels)
     f.close()
 
 if __name__ == "__main__":
