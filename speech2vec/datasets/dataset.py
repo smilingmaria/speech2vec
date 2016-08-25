@@ -18,14 +18,14 @@ class Dataset(object):
             feature = h5f[ data_type ][:]
             yphase = h5f['yphase'][:]
             labels = h5f['labels'][:]
-        
+
         self._feature = feature
         # Has no use for wav
         self._yphase = yphase
         self._y = to_categorical(labels)
-        
+
         # Normalization
-        self._normfeature = self.fit_transform(self._feature) 
+        self._normfeature = self.fit_transform(self._feature)
         self._normyphase  = self.fit_transform(self._yphase)
 
     @property
@@ -56,10 +56,10 @@ class Dataset(object):
         # Add samples according to batch_size
         toadd  = ( batch_size - X.shape[0] % batch_size ) % batch_size
         X      = np.vstack([ X, X[:toadd] ] )
-        Y      = np.vstack([ Y, Y[:toadd] ] ) 
-        
+        Y      = np.vstack([ Y, Y[:toadd] ] )
+
         assert X.shape[0] % batch_size == 0
-        
+
         if shuffle:
             X, Y = sklearn.utils.shuffle(X, Y, random_state=0)
 
@@ -68,11 +68,11 @@ class Dataset(object):
             y = Y[idx:idx+batch_size]
 
             yield x, y
-    
+
     def fit_X_shape(self, X_pred):
         sample = self.X.shape[0]
         return X_pred[:sample]
-    
+
     def split_X(self, X_rec):
         X_rec = self.fit_X_shape(X_rec)
 
@@ -97,7 +97,7 @@ class Spectral(Dataset, InstanceWise):
 
 ###################
 #  Dataset Utils  #
-################### 
+###################
 
 def to_categorical(y, nb_classes=None):
     '''Convert class vector (integers from 0 to nb_classes)
@@ -122,8 +122,8 @@ project_root = cur_dir + '/../../'
 raw_data_dir = project_root + 'raw_data/'
 
 def dsp_hw2(data_type='fbank_delta'):
-    
-    h5_path = raw_data_dir + 'dsp_hw2/data.h5' 
+
+    h5_path = raw_data_dir + 'dsp_hw2/data.h5'
 
     if data_type == 'fbank' or data_type == 'fbank_delta':
         dataset_class = Spectral

@@ -9,16 +9,21 @@ from tqdm import tqdm
 
 from utils import makedir
 
-# Function that includes all other functions for saving 
+# Function that includes all other functions for saving
 def save_reconstruction( sess, model, minloss_modelname, save_dir, dataset ):
     makedir(save_dir)
     batch_size = model.batch_input_shape[0]
 
     X_rec = model.reconstruct(sess,dataset.next_batch(batch_size=batch_size, shuffle = False))
     code  = model.encode(sess,dataset.next_batch(batch_size=batch_size, shuffle = False))
-    
+
+    X_rec = dataset.fit_X_shape(X_rec)
+    code  = dataset.fit_X_shape(code)
+
     h5_path = save_dir + minloss_modelname + '.h5'
+
     feat, phase = dataset.split_X(X_rec)
+
     print "Saving feature and yphase to %s" % h5_path
     save_h5( h5_path, feat, phase, code )
 
@@ -47,19 +52,19 @@ def save_to_csv( arr,dir_name):
     makedir(dir_name)
 
     for idx,arr in tqdm(enumerate(arr)):
-        fname = dir_name + str(idx+1) + ".csv" 
+        fname = dir_name + str(idx+1) + ".csv"
         # Convert Nan to zeros
         arr = np.nan_to_num(arr)
         # Remove rows that are all nans or all zeros
         #mask = np.all(np.isnan(arr) | np.equal(arr, 0), axis=1)
         #arr = arr[~mask]
-        np.savetxt(fname,arr,delimiter=",") 
+        np.savetxt(fname,arr,delimiter=",")
 
 def plot_tsne(X,Y):
     tsne = TSNE(n_components=2, random_state=0)
     np.set_printoptions(suppress=True)
     visX = tsne.fit(X)
-    
+
     plt.figure()
     plt.scatter(visX[:,0], visX[:,1], c=Y, cmap=plt.cm.get_cmap("jet", 10))
     plt.colorbar(ticks=range(10))
