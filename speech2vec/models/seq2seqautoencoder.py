@@ -4,9 +4,9 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
-from .inference import gaussian_inference 
-from .encoders import basic_encoder, bidirectional_encoder
-from .decoders import basic_decoder, attention_decoder
+from recurrent.inference import gaussian_inference 
+from recurrent.encoders import basic_encoder, bidirectional_encoder
+from recurrent.decoders import basic_decoder, attention_decoder
 
 def get_cell(cell_type):
     if isinstance(cell_type,str):
@@ -50,7 +50,7 @@ class Seq2seqAutoencoder(object):
         self.de_cell = [ rnn_cell.MultiRNNCell([de_cell] * de_depth, state_is_tuple=True) ]
       
         self.dropout_keep_prob = dropout_keep_prob 
-        
+       
         # Define model name according to structure
         namestring = ""
         namestring += self.__class__.__name__
@@ -87,7 +87,7 @@ class Seq2seqAutoencoder(object):
         if bidirectional:
             self.code, _ = bidirectional_encoder( self.en_cell, self.x, self.keep_prob ) 
         else:
-            self.code = basic_encoder( self.en_cell, self.x, self.keep_prob ) 
+            self.code = basic_encoder( self.en_cell, self.x, self.keep_prob) 
 
     def build_decoder(self):
         peek = self.model_options['peek']
