@@ -105,7 +105,7 @@ def save_to_data_h5(path, fbank, fbank_delta, yphase, wav, labels, genders):
     f.create_dataset('yphase',data=yphase)
     f.create_dataset('wav',data=wav)
     f.create_dataset('labels',data=labels)
-    f.create_dataset('genders',data=labels)
+    f.create_dataset('genders',data=genders)
     f.close()
 
 if __name__ == "__main__":

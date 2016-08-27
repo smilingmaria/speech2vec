@@ -3,6 +3,7 @@ import csv
 from glob import glob
 import os
 import pickle
+import pprint
 import re
 import sys
 
@@ -89,6 +90,25 @@ def create_feature_map( label_pickle, wav_dir, feature_map_path ):
     else:
         print("Feature map already exists at {}".format(feature_map_path))
 
+def calculate_stats( feature_map_path ):
+    digit_gender_count = defaultdict(int)
+
+    with open(feature_map_path,'r') as f:
+        reader = csv.reader(f,delimiter=',')
+        for row in reader:
+            digit = int(row[2])
+            gender = int(row[3])
+
+            if gender == 1:
+                digit_gender_count[ str(digit) + "_male" ] += 1
+            elif gender == 2:
+                digit_gender_count[ str(digit) + "_female" ] += 1
+            else:
+                raise ValueError("Unexpected gender number {}".format(gender))
+    keys = sorted(digit_gender_count.keys())
+    for k in keys:
+        print("{} : {}".format(k, digit_gender_count[k]))
+
 if __name__ == "__main__":
     label_dir = 'raw/labels/'
     label_pickle = 'labels.pkl'
@@ -99,3 +119,5 @@ if __name__ == "__main__":
     run_label_parsing(label_dir, label_pickle)
 
     create_feature_map( label_pickle, wav_dir, feature_map_path )
+
+    calculate_stats(feature_map_path)

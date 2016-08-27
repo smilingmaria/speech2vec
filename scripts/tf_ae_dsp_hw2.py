@@ -11,7 +11,7 @@ from speech2vec.evaluation import save_reconstruction
 from speech2vec.utils import makedir
 
 # Load data
-dataset = load_dataset()
+dataset = load_dataset('fbank')
 
 result_dir = '../result/' + load_dataset.__name__ + '/'
 makedir(result_dir)
@@ -24,10 +24,10 @@ sample, timestep, feature = X.shape
 
 cells = ['BasicLSTMCell'] * 2
 
-nb_epochs = 5000
-batch_size = 128
-hidden_dim = 256
-encode_dim = 2
+nb_epochs = 1000
+batch_size = 16
+hidden_dim = 128
+encode_dim = 10
 depth = (1,1)
 keep_prob = 0.8
 peek = False
@@ -66,6 +66,9 @@ with tf.Session(config=config) as sess:
 
         epoch_loss = model.train_one_epoch( sess, dataset.next_batch(batch_size=batch_size,shuffle=True) )
 
+        save_dir = result_dir + model_name + '/'
+        epoch_save_name = 'epoch{}'.format(epoch)
+        save_reconstruction(sess, model, epoch_save_name, save_dir, dataset)
         if epoch_loss < min_loss:
             min_loss = epoch_loss
             model.save(sess, saver, save_path)

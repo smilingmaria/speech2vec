@@ -26,7 +26,7 @@ cells = ['BasicLSTMCell'] * 2
 
 nb_epochs = 1000
 batch_size = 16
-hidden_dim = 256
+hidden_dim = 128
 latent_dim = 2
 depth = (1,1)
 keep_prob = 0.8

@@ -34,11 +34,13 @@ class Dataset(object):
 
     @property
     def X(self):
-        return np.dstack([ self._feature, self._yphase ])
+        return self._feature
+        #return np.dstack([ self._feature, self._yphase ])
 
     @property
     def normX(self):
-        return np.dstack([ self._normfeature, self._normyphase ])
+        return self._normfeature
+        #return np.dstack([ self._normfeature, self._normyphase ])
 
     @property
     def y(self):
