@@ -26,7 +26,7 @@ def save_reconstruction( sess, model, minloss_modelname, save_dir, dataset ):
 
     print "Saving feature and yphase to %s" % h5_path
     save_h5( h5_path, feat, phase, code )
-
+    """
     feature_path = save_dir + dataset.data_type + '/'
     print "Saving feature to %s" % feature_path
     save_to_csv( feat, feature_path)
@@ -34,7 +34,7 @@ def save_reconstruction( sess, model, minloss_modelname, save_dir, dataset ):
     yphase_path = save_dir + 'yphase/'
     print "Saving yphase to %s" % yphase_path
     save_to_csv( phase, yphase_path )
-
+    """
 def save_h5(h5_path, feature, yphase, code):
     with h5py.File(h5_path, 'w') as h5f:
         h5f.create_dataset("feature",data=feature)

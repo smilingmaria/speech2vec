@@ -4,7 +4,7 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
-from feedforward import fullyconnected2D
+from fullyconnected import fullyconnected2D
 from recurrent.inference import gaussian_inference
 from recurrent.encoders import basic_encoder, bidirectional_encoder
 from recurrent.decoders import basic_decoder, attention_decoder
@@ -182,47 +182,19 @@ class Seq2seqAutoencoder(object):
         print("Model restored: %s" % load_path)
 
 class VariationalSeq2seqAutoencoder(Seq2seqAutoencoder):
-    def __init__(self, batch_input_shape, cells, hidden_dim, latent_dim, depth, dropout_keep_prob, **kwargs):
-        super(VariationalSeq2seqAutoencoder, self).__init__(batch_input_shape, cells, hidden_dim, depth, dropout_keep_prob, **kwargs)
-        self.hidden_dim = hidden_dim
-        self.latent_dim = latent_dim
-        self._name += '_latent_' + str(latent_dim)
 
-    def build_graph(self):
-        self.build_inputs()
-        self.build_encoder()
-        self.build_inference()
-        self.build_decoder()
-        self.build_loss()
-        self.build_optimizer()
-
-    def build_inference(self):
-        self.encoder_lastoutput = self.code
-
+    def build_code(self):
         self.z, self.z_mean, self.z_logvar = \
-                gaussian_inference( self.latent_dim, self.encoder_lastoutput, self.keep_prob )
+                gaussian_inference( self.encode_dim, self.encoder_output, self.keep_prob )
         # Work around for encode function
         self.code = self.z_mean
-
-
-    def build_decoder(self):
-        peek = self.model_options['peek']
-
-
-        W_de_init = tf.get_variable("W_de_init", shape = [self.latent_dim, self.hidden_dim],\
-                                    initializer=tf.contrib.layers.xavier_initializer() )
-
-        b_de_init = tf.Variable( tf.zeros([ self.hidden_dim ] ) )
-
-        decoder_init = tf.matmul( tf.nn.dropout( self.z, self.keep_prob ), W_de_init ) + b_de_init
-        self.x_rec = basic_decoder( self.batch_input_shape, self.de_cell, decoder_init,  self.keep_prob, peek = peek )
 
     def build_loss(self):
         self.latent_cost = tf.reduce_mean(
                 - 0.5 * tf.reduce_sum(1 + self.z_logvar - tf.square(self.z_mean) - tf.exp( self.z_logvar ), reduction_indices = [1] )
                 )
         self.rec_cost = tf.reduce_mean(
-                tf.reduce_sum(tf.square(self.x - self.x_rec), reduction_indices=[1,2])
+                tf.square(self.x - self.x_rec)
                 )
         self.cost = self.latent_cost + self.rec_cost
 
