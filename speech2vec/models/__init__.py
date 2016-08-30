@@ -1,2 +1,2 @@
-from .seq2seqautoencoder import *
+#from .seq2seqautoencoder import *
 from .cnnautoencoder import *

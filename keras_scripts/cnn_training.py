@@ -66,6 +66,7 @@ if __name__ == "__main__":
             'data_type': 'fbank_delta',
             'with_yphase': True,
             'nb_epochs': 1000,
+            'batch_size': 32,
             'eval_epoch': 100,
             'result_root': '/home/ubuntu/speech2vec/result/dsp_hw2/'
     }
