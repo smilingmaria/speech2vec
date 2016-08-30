@@ -11,6 +11,8 @@ from keras.models import Model, load_model
 from keras import backend as K
 from keras import objectives, optimizers
 
+sys.path.insert(0, os.path.abspath('../../'))
+
 class CNNAutoencoder(object):
     def __init__(self,
                  data_reader,
@@ -32,9 +34,10 @@ class CNNAutoencoder(object):
         self.nb_conv = nb_conv
         self.encode_dim = encode_dim
 
-        self.depth = depth
-        print("Depth is currently unused in CNN Autoencoder")
+        print("Depth & Dropout are currently unused in CNN Autoencoders")
+        logging.debug("Depth & Dropout are currently unused in CNN Autoencoders")
 
+        self.depth = depth
         self.dropout_keep_prob = dropout_keep_prob
 
     @property
@@ -152,11 +155,10 @@ class CNNAutoencoder(object):
 
         logging.info("Begin training")
 
-        data_generator = self.data_reader.next_batch_generator()
-        nb_samples = self.data_reader.nb_samples
-
         for epoch in range(1, nb_epochs+1, 1):
             print("Epoch {}".format(epoch))
+            data_generator = self.data_reader.next_batch_generator()
+            nb_samples = self.data_reader.nb_samples
             epoch_history = self.model.fit_generator( generator = data_generator ,
                                       samples_per_epoch = nb_samples,
                                       nb_epoch = 1 )
@@ -244,3 +246,76 @@ class CNNAutoencoder(object):
         self.model     = load_model(model_load_path)
         self.encoder   = load_model(encoder_load_path)
         self.generator = load_model(generator_load_path)
+
+class CNNVariationalAutoencoder(CNNAutoencoder):
+    def __init__(self,
+                 data_reader,
+                 hidden_dim,
+                 nb_filters,
+                 nb_conv,
+                 encode_dim,
+                 depth,
+                 dropout_keep_prob):
+
+        super(CNNVariationalAutoencoder,self).__init__(
+                                                 data_reader,
+                                                 hidden_dim,
+                                                 nb_filters,
+                                                 nb_conv,
+                                                 encode_dim,
+                                                 depth,
+                                                 dropout_keep_prob)
+
+    ######################
+    #     Build Graph    #
+    ######################
+
+    def build_code(self):
+        self.z_mean = Dense(self.encode_dim)(self.encoder_output)
+        self.z_logvar = Dense(self.encode_dim)(self.encoder_output)
+        epsilon_std = 1e-2
+
+        def sampling(args):
+            z_mean, z_logvar = args
+            batch_size, _, _ = self.batch_input_shape
+            epsilon = K.random_normal(shape=(batch_size, self.encode_dim),
+                                        mean=0., std=epsilon_std)
+            return z_mean + K.exp(z_logvar) * epsilon
+
+        self.z = Lambda(sampling, output_shape=(self.encode_dim,))([self.z_mean, self.z_logvar])
+
+        self.code = self.z
+
+    def build_loss(self):
+
+        def vae_loss(x, x_decoded_mean):
+            x = K.flatten(x)
+            x_decoded_mean = K.flatten(x_decoded_mean)
+
+            rec_loss = objectives.mean_squared_error(x, x_decoded_mean)
+
+            kl_loss = - 0.5 * K.mean(1 + self.z_logvar - K.square(self.z_mean) - K.exp(self.z_logvar), axis=-1)
+
+            return rec_loss + kl_loss
+
+        self.cost = vae_loss
+
+    def build_models(self):
+        # For keras models
+        self.model = Model(input=[self.x], output=[self.x_rec])
+        self.model.compile(loss=self.cost,
+                            optimizer=self.optimizer)
+
+        self.encoder = Model(input=[self.x], output=[self.z_mean])
+
+##############################
+#    Abbervations for ease   #
+##############################
+cnnae = CNNAutoencoder
+cnnvae = CNNVariationalAutoencoder
+
+
+from speech2vec import utils
+
+def get(identifier):
+    return utils.get_from_module(identifier,globals(),'cnnautoencoder')
