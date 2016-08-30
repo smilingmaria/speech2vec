@@ -158,7 +158,7 @@ if __name__ == "__main__":
     data_h5 = os.path.join(dataset_root,'data.h5')
     result_dir = '/home/ubuntu/speech2vec/result/dsp_hw2'
 
-    data_type = 'fbank'
+    data_type = 'fbank_delta'
 
     training_args = {
             'nb_epochs': 1000,

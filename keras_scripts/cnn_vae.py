@@ -35,7 +35,6 @@ def conv_vae( batch_input_shape, latent_dim=2, intermediate_dim=128, nb_filters=
 
     z = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
 
-
     # Decoder
     decoder_h = Dense(intermediate_dim, activation='relu')
     decoder_f = Dense(nb_filters*img_rows*img_cols, activation='relu')
