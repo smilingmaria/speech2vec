@@ -49,7 +49,8 @@ class DataReader(object):
             nb_samples, timestep, feature_size = self.h5_handle[ self.data_type ].shape
             _, _, yphase_size = self.h5_handle['yphase'].shape
             return (nb_samples, timestep, feature_size + yphase_size)
-        return self.h5_handle[ self.data_type ].shape
+        else:
+            return self.h5_handle[ self.data_type ].shape
 
     @property
     def nb_samples(self):

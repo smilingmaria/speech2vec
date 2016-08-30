@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 
+from annoy import AnnoyIndex
 import h5py
 import numpy as np
 
@@ -12,6 +13,8 @@ from keras import backend as K
 from keras import objectives, optimizers
 
 sys.path.insert(0, os.path.abspath('../../'))
+
+from speech2vec.evaluation import eval_code_pr
 
 class CNNAutoencoder(object):
     def __init__(self,
@@ -145,7 +148,7 @@ class CNNAutoencoder(object):
     #########################
     #      Training Ops     #
     #########################
-    def train(self, nb_epochs, result_root, eval_epoch):
+    def train(self, nb_epochs, eval_epoch, save_epoch, result_root):
         exp_dir = os.path.join(result_root,self.data_reader.name, self.name)
         if not os.path.exists(exp_dir):
             os.makedirs(exp_dir)
@@ -153,8 +156,10 @@ class CNNAutoencoder(object):
         training_log_file = os.path.join(exp_dir,'train.log')
         logging.basicConfig(filename=training_log_file,level=logging.INFO)
 
-        logging.info("Begin training")
 
+
+
+        logging.info("Begin training")
         for epoch in range(1, nb_epochs+1, 1):
             print("Epoch {}".format(epoch))
             data_generator = self.data_reader.next_batch_generator()
@@ -162,52 +167,67 @@ class CNNAutoencoder(object):
             epoch_history = self.model.fit_generator( generator = data_generator ,
                                       samples_per_epoch = nb_samples,
                                       nb_epoch = 1 )
+
             epoch_loss = epoch_history.history['loss'][0]
             logging.info("Epoch {}, loss{}".format(epoch,epoch_loss))
+
+
             if eval_epoch & epoch % eval_epoch == 0:
+                # Evaluation precision & recall
+                labels = self.data_reader.h5_handle['labels'][:]
 
-                save_dir = os.path.join(exp_dir,'model_epoch_{}'.format(epoch))
-                eval_path = os.path.join(exp_dir,'eval_epoch_{}.h5'.format(epoch))
-                self.save(save_dir)
-                self.eval(eval_path)
+                code = self.encode()
 
+                prec_list, reca_list = eval_code_pr( labels, code )
 
-    def eval(self, save_path = None):
-        logging.info("Evaluating reconstruction, code, and generation")
+                print("Precision:{}\nRecall:{}".format(prec_list,reca_list))
 
+                # save
+                if epoch % save_epoch == 0:
+                    save_dir = os.path.join(exp_dir,'model_epoch{}'.format(epoch))
+                    self.save_models_to_dir(save_dir)
+
+                    eval_save_path = os.path.join(exp_dir,'eval_epoch{}.h5'.format(epoch))
+                    evaluation = {
+                            'recX': self.reconstruct(),
+                            'code': code, # Built in eval
+                            'genX': self.generate()
+                            }
+
+                    self.save_eval(eval_save_path, evaluation)
+
+    def reconstruct(self):
+        logging.debug("Reconstruct")
         recX_data_gen = self.data_reader.next_batch_generator(shuffle=False)
-        code_data_gen = self.data_reader.next_batch_generator(shuffle=False)
-        genX_code_gen = self.code_generator()
-
         nb_samples = self.data_reader.nb_samples
 
-        logging.debug("Evaluating reconstruction...")
         recX = self.model.predict_generator( generator = recX_data_gen,
                                              val_samples = nb_samples )
+        return recX
 
-        logging.debug("Evaluating code...")
+    def encode(self):
+        logging.debug("Encode")
+        code_data_gen = self.data_reader.next_batch_generator(shuffle=False)
+        nb_samples = self.data_reader.nb_samples
+
         code = self.encoder.predict_generator( generator = code_data_gen,
-                                               val_samples = nb_samples )
+                                                val_samples = nb_samples )
+        return code
 
-        if self.encode_dim == 2:
-            logging.debug("Evaluating generation...")
-            genX = self.generator.predict( genX_code_gen )
+    def generate(self):
+        if self.encode_dim != 2:
+            logging.debug("Encode dimension is not 2, generation skipped")
+            return None
 
-        if save_path is not None:
-            logging.info("Saving evaluation to {}".format(save_path))
-            with h5py.File(save_path,'w') as h5_handle:
-                h5_handle.create_dataset('recX',data=recX)
-                h5_handle.create_dataset('code',data=code)
-                # Evaluate by generator
-                if self.encode_dim == 2:
-                    h5_handle.create_dataset('genX',data=genX)
+        logging.debug("Generate")
+        genX_code_gen = self.two_dim_code_generator()
+        nb_samples = self.data_reader.nb_samples
 
-        if self.encode_dim == 2:
-            return [ recX, code, genX ]
-        else:
-            return [ recX, code ]
+        genX = self.generator.predict( genX_code_gen )
 
-    def code_generator(self, side = 0.5, num = 11 ):
+        return genX
+
+    def two_dim_code_generator(self, side = 0.5, num = 11 ):
         """
             Work around for generator queue
             TODO: debug
@@ -224,7 +244,7 @@ class CNNAutoencoder(object):
     ######################
     #     Save & Load    #
     ######################
-    def save(self, save_dir):
+    def save_models_to_dir(self, save_dir):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -237,7 +257,14 @@ class CNNAutoencoder(object):
         self.encoder.save(encoder_save_path)
         self.generator.save(generator_save_path)
 
-    def load(self, load_dir):
+    def save_eval(self, eval_save_path, evaluation):
+        logging.debug("Saving evaluation to {}".format(eval_save_path))
+        with h5py.File(eval_save_path,'w') as h5f:
+            for k, v in evaluation.iteritems():
+                if v is not None:
+                    h5f.create_dataset(k, data=v)
+
+    def load_models_from_dir(self, load_dir):
         logging.debug("Loading model, encoder, generator from {}".format(load_dir))
         model_load_path = os.path.join(load_dir,'model.h5')
         encoder_load_path = os.path.join(load_dir,'encoder.h5')
@@ -309,13 +336,11 @@ class CNNVariationalAutoencoder(CNNAutoencoder):
         self.encoder = Model(input=[self.x], output=[self.z_mean])
 
 ##############################
-#    Abbervations for ease   #
+#   Abbreviations for ease   #
 ##############################
-cnnae = CNNAutoencoder
+cnnae  = CNNAutoencoder
 cnnvae = CNNVariationalAutoencoder
 
-
 from speech2vec import utils
-
 def get(identifier):
     return utils.get_from_module(identifier,globals(),'cnnautoencoder')

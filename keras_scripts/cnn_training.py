@@ -8,7 +8,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath('..'))
 
 from speech2vec.datareader import DataReader
-from speech2vec.models import CNNAutoencoder
+from speech2vec.models import cnnautoencoder
 
 def run_training( model_args, training_args ):
     ####################
@@ -16,6 +16,7 @@ def run_training( model_args, training_args ):
     ####################
 
     # Model Args
+    ae_type           = model_args.get('model','cnnae')
     hidden_dim        = model_args.get('hidden_dim',128)
     encode_dim        = model_args.get('encode_dim',2)
     nb_filters        = model_args.get('nb_filters',32)
@@ -31,7 +32,8 @@ def run_training( model_args, training_args ):
     # Training args
     nb_epochs         = training_args.get('nb_epochs',10)
     batch_size        = training_args.get('batch_size',16)
-    eval_epoch        = training_args.get('eval_epoch',100)
+    eval_epoch        = training_args.get('eval_epoch',10)
+    save_epoch        = training_args.get('save_epoch',100)
     result_root       = training_args.get('result_root','./result_root/')
 
     ####################
@@ -45,19 +47,23 @@ def run_training( model_args, training_args ):
                          batch_size  = batch_size )
 
     # Build Model
-    model = CNNAutoencoder( data_reader = reader,
+    autoencoder = cnnautoencoder.get(ae_type)
+
+    model = autoencoder( data_reader = reader,
                             hidden_dim = hidden_dim,
                             nb_filters = nb_filters,
                             nb_conv = nb_conv,
                             encode_dim = encode_dim,
                             depth = depth,
                             dropout_keep_prob = dropout_keep_prob )
-    model.build_graph()
+    import warnings
+    with warnings.catch_warnings():
+        model.build_graph()
 
-    # Start training
     model.train( nb_epochs=nb_epochs,
-                 result_root=result_root,
-                 eval_epoch=eval_epoch)
+                 eval_epoch=eval_epoch,
+                 save_epoch=save_epoch,
+                 result_root=result_root)
 
 if __name__ == "__main__":
 
@@ -66,12 +72,14 @@ if __name__ == "__main__":
             'data_type': 'fbank_delta',
             'with_yphase': True,
             'nb_epochs': 1000,
-            'batch_size': 32,
-            'eval_epoch': 100,
+            'batch_size': 128,
+            'eval_epoch': 10,
+            'save_epoch': 100,
             'result_root': '/home/ubuntu/speech2vec/result/dsp_hw2/'
     }
 
     model_args = {
+            'model': 'CNNAutoencoder',
             'encode_dim': 10,
             'hidden_dim': 128,
             'nb_filters':32,
