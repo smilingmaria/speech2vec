@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 
-from annoy import AnnoyIndex
 import h5py
 import numpy as np
 
