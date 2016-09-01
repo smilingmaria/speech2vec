@@ -11,7 +11,7 @@ from speech2vec.evaluation import save_reconstruction
 from speech2vec.utils import makedir
 
 # Load data
-dataset = load_dataset('fbank')
+dataset = load_dataset('fbank_delta')
 
 result_dir = '../result/' + load_dataset.__name__ + '/'
 makedir(result_dir)
@@ -47,7 +47,7 @@ model = Seq2seqAutoencoder( batch_input_shape,\
 
 model.build_graph()
 
-model_name = model.name
+model_name = dataset.data_type + '_' + model.name
 
 save_path = result_dir + model_name + '.ckpt'
 
