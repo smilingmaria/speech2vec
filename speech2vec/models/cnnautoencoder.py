@@ -83,9 +83,10 @@ class CNNAutoencoder(object):
                                      self.nb_conv,
                                      border_mode='same',
                                      activation='relu')(im_shape_x)
-        flattened_conv_output = Flatten()(conv_output)
+        self.encoder_output = Flatten()(conv_output)
+        #flattened_conv_output = Flatten()(conv_output)
 
-        self.encoder_output = Dense(self.hidden_dim, activation='relu')(flattened_conv_output)
+        #self.encoder_output = Dense(self.hidden_dim, activation='relu')(flattened_conv_output)
 
     def build_code(self):
         self.code = Dense(self.encode_dim, activation='relu')(self.encoder_output)
@@ -172,7 +173,7 @@ class CNNAutoencoder(object):
             logging.info("Epoch {}, loss{}".format(epoch,epoch_loss))
 
 
-            if eval_epoch & epoch % eval_epoch == 0:
+            if epoch % eval_epoch == 0:
                 # Evaluation precision & recall
                 labels = self.data_reader.h5_handle['labels'][:]
 
@@ -185,12 +186,15 @@ class CNNAutoencoder(object):
                 # save
                 if epoch % save_epoch == 0:
                     save_dir = os.path.join(exp_dir,'model_epoch{}'.format(epoch))
+
+                    print("Saving models to {}".format(save_dir))
                     self.save_models_to_dir(save_dir)
 
                     eval_save_path = os.path.join(exp_dir,'eval_epoch{}.h5'.format(epoch))
+                    print("Saving evaluations to {}".format(eval_save_path))
                     evaluation = {
                             'recX': self.reconstruct(),
-                            'code': code, # Built in eval
+                            'code': code, # Already encoded
                             'genX': self.generate()
                             }
 
@@ -338,8 +342,8 @@ class CNNVariationalAutoencoder(CNNAutoencoder):
 ##############################
 #   Abbreviations for ease   #
 ##############################
-cnnae  = CNNAutoencoder
-cnnvae = CNNVariationalAutoencoder
+cnnae  = CNNAE  = CNNAutoencoder
+cnnvae = CNNVAE = CNNVariationalAutoencoder
 
 from speech2vec import utils
 def get(identifier):

@@ -56,9 +56,7 @@ def run_training( model_args, training_args ):
                             encode_dim = encode_dim,
                             depth = depth,
                             dropout_keep_prob = dropout_keep_prob )
-    import warnings
-    with warnings.catch_warnings():
-        model.build_graph()
+    model.build_graph()
 
     model.train( nb_epochs=nb_epochs,
                  eval_epoch=eval_epoch,
@@ -72,14 +70,14 @@ if __name__ == "__main__":
             'data_type': 'fbank_delta',
             'with_yphase': True,
             'nb_epochs': 1000,
-            'batch_size': 128,
+            'batch_size': 16,
             'eval_epoch': 10,
             'save_epoch': 100,
             'result_root': '/home/ubuntu/speech2vec/result/dsp_hw2/'
     }
 
     model_args = {
-            'model': 'CNNAutoencoder',
+            'model': 'cnnae',
             'encode_dim': 10,
             'hidden_dim': 128,
             'nb_filters':32,

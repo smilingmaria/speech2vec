@@ -108,17 +108,18 @@ def run_training( data_h5, data_type, training_args, model_args, result_dir ):
                 nb_epoch=1,
                 batch_size=batch_size)
 
+        if epoch % 100 == 0:
+            epoch_save_path = os.path.join(save_dir, 'epoch{}.h5'.format(epoch))
 
-        epoch_save_path = os.path.join(save_dir, 'epoch{}.h5'.format(epoch))
-        print("Saving to {}".format(epoch_save_path))
-        recX = vae.predict(X, batch_size=batch_size)
-        recX = recX[:nb_samples]
-        code = encoder.predict(X, batch_size=batch_size)
-        code = code[:nb_samples]
+            print("Saving to {}".format(epoch_save_path))
+            recX = vae.predict(X, batch_size=batch_size)
+            recX = recX[:nb_samples]
+            code = encoder.predict(X, batch_size=batch_size)
+            code = code[:nb_samples]
 
-        with h5py.File(epoch_save_path,'w') as handle:
-            handle.create_dataset('code',data=code)
-            handle.create_dataset('recX',data=recX)
+            with h5py.File(epoch_save_path,'w') as handle:
+                handle.create_dataset('code',data=code)
+                handle.create_dataset('recX',data=recX)
 
 def get_model_name( data_type, training_args, model_args ):
     arg_list = list(training_args.items()) + list(model_args.items())
